@@ -15,6 +15,6 @@ variable "tags" {
   description = "Tags applied to both queues."
   default = {
     Course = "cloud-computing"
-    Week   = "10"
+    Week   = "9"
   }
 }

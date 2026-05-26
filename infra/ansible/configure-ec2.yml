@@ -1,0 +1,25 @@
+---
+- name: Configure EC2 Instances (Docker-based)
+  hosts: web_servers
+  become: yes
+  gather_facts: yes
+
+  roles:
+    - docker
+
+  tasks:
+
+    - name: Pull user-service image
+      docker_image:
+        name: miguelrodr1gues/user-service
+        tag: latest
+        source: pull
+
+    - name: Run user-service container
+      docker_container:
+        name: user-service
+        image: miguelrodr1gues/user-service:latest
+        state: started
+        restart_policy: unless-stopped
+        ports:
+          - "8080:8080"

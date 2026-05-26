@@ -9,7 +9,7 @@ terraform {
 }
 
 provider "aws" {
-  # Region from AWS_REGION or provider config; override with -var or TF_VAR_ as needed.
+  region = "eu-central-1"
 }
 
 resource "aws_sqs_queue" "product_events_dlq" {
@@ -28,6 +28,20 @@ resource "aws_sqs_queue" "product_events" {
     deadLetterTargetArn = aws_sqs_queue.product_events_dlq.arn
     maxReceiveCount     = var.max_receive_count_before_dlq
   })
+
+  tags = var.tags
+}
+
+resource "aws_sqs_queue" "product_events_fifo" {
+  name                        = "${var.name_prefix}-product-events.fifo"
+  fifo_queue                  = true
+
+  # remove duplicados automaticamente
+  content_based_deduplication = true
+
+  visibility_timeout_seconds = 60
+  message_retention_seconds  = 345600
+  receive_wait_time_seconds  = 20
 
   tags = var.tags
 }

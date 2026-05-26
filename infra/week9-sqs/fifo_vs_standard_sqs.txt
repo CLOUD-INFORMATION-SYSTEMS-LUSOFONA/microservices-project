@@ -1,0 +1,15 @@
+Diferenças entre Standard e FIFO (Amazon SQS)
+
+Standard queues:
+- Maior escalabilidade e performance
+- Não garantem ordem das mensagens
+- Podem entregar mensagens duplicadas
+
+FIFO queues:
+- Garantem ordem de processamento (First-In-First-Out)
+- Evitam duplicação de mensagens (deduplication)
+- Menor throughput comparado com Standard
+
+Trade-offs
+- FIFO → maior consistência e fiabilidade, mas menor performance
+- Standard → maior performance e escalabilidade, mas sem garantias de ordem ou unicidade
