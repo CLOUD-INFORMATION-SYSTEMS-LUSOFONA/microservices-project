@@ -219,12 +219,10 @@ cd api-gateway
 mvn spring-boot:run
 ```
 
-**Important:** Before starting the services, ensure Kafka is running:
+**Important:** Before starting the services, **Kafka must be running**. Otherwise you will see errors like *"Node 1 disconnected"* or *"Connection to node 1 (localhost:9092) could not be established"*. To start only Kafka and Zookeeper (recommended for local development):
 ```bash
-# Using Docker Compose (recommended)
-docker-compose up -d zookeeper kafka
-
-# Or install Kafka locally and start it
+docker-compose -f docker-compose.kafka.yml up -d
+# Wait a few seconds for Kafka to be ready, then start the services
 ```
 
 ### Option 2: Build and Run JAR Files
@@ -398,6 +396,15 @@ Order Service: Creates order → Publishes OrderCreatedEvent to Kafka
 Product Service: Consumes event → Updates product inventory
 ```
 
+### 3. Optional Amazon SQS (Week 10 – cloud lab)
+
+The template also includes **optional AWS SQS** wiring for a shared **`product-events`** queue:
+
+- **product-service** publishes a JSON `ProductCreated` event after a successful **`POST /products`** when `cloud.sqs.product-events.enabled=true`.
+- **order-service** long-polls the same queue URL and logs received events when `cloud.sqs.product-events-consumer.enabled=true`.
+
+Terraform for queues + DLQ lives in **`infra/week9-sqs/`**. The Week 10 course materials focus on **infrastructure** (queues, IAM, environment variables), not on implementing Java producers or consumers.
+
 ## Microservice Architecture
 
 Each microservice follows a layered architecture pattern:
@@ -471,11 +478,11 @@ Each microservice follows a layered architecture pattern:
 - [ ] Add automated testing
 - [ ] Configure deployment environments
 
-### Week 11 - SQS (Event-Driven Architecture)
-- [ ] Integrate SQS for messaging
-- [ ] Implement event-driven architecture
-- [ ] Create message producers and consumers
-- [ ] Handle asynchronous communication
+### Week 11 - SQS (event-driven architecture, cloud focus)
+- [ ] Create SQS main queue and DLQ (Terraform in `infra/week9-sqs/`, or Console / CLI)
+- [ ] Configure redrive policy and sensible visibility timeout / long polling
+- [ ] Grant IAM least privilege (`SendMessage` / `ReceiveMessage` / `DeleteMessage`, etc.)
+- [ ] Enable the template via `CLOUD_SQS_*` environment variables and verify logs end-to-end
 
 ### Week 12 - Ansible
 - [ ] Create Ansible playbooks
@@ -575,18 +582,197 @@ docker-compose down
 - You must create Dockerfiles for each service first (Week 2)
 - See `Aulas/Week-02/` for detailed instructions
 
+## CI/CD Pipeline (Week 10 — GitHub Actions)
+
+All workflows live under [`.github/workflows/`](.github/workflows/) and run on GitHub-hosted Ubuntu runners.
+
+### Repository layout note (vs. the activity example)
+
+The Week 10 activity sheet shows services under `services/<svc>/` and Terraform under `terraform/`. This repo keeps the existing template layout:
+
+| Activity example  | This repo                |
+|-------------------|--------------------------|
+| `services/<svc>/` | `<svc>/` (at repo root)  |
+| `terraform/`      | `infra/week9-sqs/`       |
+
+Workflow paths have been adjusted accordingly. Functionality is identical.
+
+### Workflow inventory
+
+| File                                                                | Activity | Trigger                                  | What it does                                                                  |
+|---------------------------------------------------------------------|----------|------------------------------------------|-------------------------------------------------------------------------------|
+| [`hello.yml`](.github/workflows/hello.yml)                          | 1        | push, `workflow_dispatch`                | Smoke test — prints repo/branch/SHA/actor                                     |
+| [`ci.yml`](.github/workflows/ci.yml)                                | 2        | PR, push to `main`                       | Maven `validate` → `compile` → `verify`; uploads Surefire reports             |
+| [`image.yml`](.github/workflows/image.yml)                          | 3        | push to `main`, `workflow_dispatch`      | Builds & pushes `product-service` to Docker Hub, tagged `latest` and `<sha>`  |
+| [`aws-test.yml`](.github/workflows/aws-test.yml)                    | 4        | `workflow_dispatch`                      | Assumes IAM role via OIDC and runs `aws sts get-caller-identity`              |
+| [`terraform.yml`](.github/workflows/terraform.yml)                  | 5        | PR/push touching `infra/week9-sqs/**`    | `fmt` → `init` → `validate` → `plan` (comments on PR) → `apply` on `main`     |
+| [`build-all.yml`](.github/workflows/build-all.yml)                  | 6        | push to `main`, `workflow_dispatch`      | Matrix build & push for `user-service`, `product-service`, `order-service`    |
+| [`deploy-prod.yml`](.github/workflows/deploy-prod.yml)              | 7        | `workflow_dispatch`                      | `deploy-prod` job gated on the `production` environment (manual approval)     |
+| [`reusable-image.yml`](.github/workflows/reusable-image.yml)        | 8        | `workflow_call` (reusable)               | Parameterised Docker build & push, called by `release.yml`                    |
+| [`release.yml`](.github/workflows/release.yml)                      | 8        | tag `v*`                                 | Invokes `reusable-image.yml` for `product-service` on a version tag           |
+| [`notify.yml`](.github/workflows/notify.yml)                        | 10       | `workflow_dispatch`                      | Writes a job summary and posts to Slack via webhook                           |
+
+### Required GitHub secrets
+
+Set under **Settings → Secrets and variables → Actions**:
+
+| Secret                | Used by                                | How to get it                                                                              |
+|-----------------------|----------------------------------------|--------------------------------------------------------------------------------------------|
+| `DOCKERHUB_USERNAME`  | `image.yml`, `build-all.yml`, `reusable-image.yml` | Your Docker Hub username                                                                   |
+| `DOCKERHUB_TOKEN`     | same as above                          | Docker Hub → Account Settings → Personal Access Tokens → New Token (Read & Write)         |
+| `AWS_ROLE_TO_ASSUME`  | `aws-test.yml`, `terraform.yml`        | ARN of the `gha-deployer` IAM role (see AWS OIDC setup below)                              |
+| `SLACK_WEBHOOK`       | `notify.yml`                           | Slack → Apps → Incoming Webhooks → Add to channel → copy URL                               |
+
+### Docker Hub setup
+
+1. Create a Docker Hub account at https://hub.docker.com if you don't have one.
+2. Account Settings → Personal Access Tokens → **New Token**, scope **Read & Write**.
+3. Add `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` as GitHub repo secrets.
+4. Push to `main` (or run `image.yml` manually) → image lands at:
+   ```
+   docker pull <DOCKERHUB_USERNAME>/product-service:latest
+   docker pull <DOCKERHUB_USERNAME>/product-service:<git-sha>
+   ```
+
+### AWS OIDC setup
+
+Lets workflows assume an IAM role without storing long-lived AWS keys.
+
+**1. Create the OIDC identity provider** (one-time per AWS account):
+
+```bash
+aws iam create-open-id-connect-provider \
+  --url https://token.actions.githubusercontent.com \
+  --client-id-list sts.amazonaws.com \
+  --thumbprint-list 6938fd4d98bab03faadb97b34396831e3780aea1
+```
+
+**2. Create the IAM role** using the trust policy in this repo at [`infra/github-oidc/trust-policy.json`](infra/github-oidc/trust-policy.json) (replace `<ACCOUNT_ID>` with your AWS account ID first):
+
+```bash
+aws iam create-role \
+  --role-name gha-deployer \
+  --assume-role-policy-document file://infra/github-oidc/trust-policy.json
+```
+
+**3. Attach a least-privilege policy** — start with read-only to verify:
+
+```bash
+aws iam attach-role-policy \
+  --role-name gha-deployer \
+  --policy-arn arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess
+```
+
+For Terraform (Activity 5) you'll need broader rights (SQS, IAM, S3 for backend state). Use a custom policy scoped to the resources in `infra/week9-sqs/`.
+
+**4. Store the role ARN** as repo secret `AWS_ROLE_TO_ASSUME`:
+
+```
+arn:aws:iam::<ACCOUNT_ID>:role/gha-deployer
+```
+
+**5. Verify** by running `aws-test.yml` from the Actions tab → `Run workflow`. Output should show:
+```
+"Arn": "arn:aws:sts::<ACCOUNT_ID>:assumed-role/gha-deployer/<run-id>"
+```
+
+### Production environment (Activity 7)
+
+1. **Settings → Environments → New environment** → name it `production`.
+2. Under **Deployment protection rules** → check **Required reviewers** → add yourself.
+3. Trigger `deploy-prod.yml` manually → the `deploy-prod` job pauses with **"Waiting for review"**.
+4. Approve from the Actions run page → job proceeds.
+
+### Triggering each workflow
+
+| Workflow              | How to trigger                                                                          |
+|-----------------------|-----------------------------------------------------------------------------------------|
+| `hello.yml`           | Any push, or Actions tab → Hello Actions → Run workflow                                 |
+| `ci.yml`              | Open a PR, or push to `main`                                                            |
+| `image.yml`           | Push to `main`, or Run workflow manually                                                |
+| `aws-test.yml`        | Actions tab → AWS OIDC Test → Run workflow                                              |
+| `terraform.yml`       | Edit a file under `infra/week9-sqs/` and open a PR; merge to `main` for apply           |
+| `build-all.yml`       | Push to `main`, or Run workflow manually                                                |
+| `deploy-prod.yml`     | Actions tab → Deploy to Production → Run workflow → approve at the gate                 |
+| `release.yml`         | `git tag v0.1.0 && git push origin v0.1.0`                                              |
+| `notify.yml`          | Actions tab → Deploy Report & Notify → Run workflow                                     |
+
+### Local workflow testing with `act` (Activity 9)
+
+[`act`](https://github.com/nektos/act) runs workflows inside Docker locally — useful for iterating without push churn.
+
+```bash
+# macOS
+brew install act
+
+# Windows (winget)
+winget install nektos.act
+
+# Linux
+curl https://raw.githubusercontent.com/nektos/act/master/install.sh | sudo bash
+
+# Usage
+act -l                  # list workflows and jobs
+act pull_request        # simulate a PR event
+act -j java-build       # run a specific job by name
+act workflow_dispatch -W .github/workflows/hello.yml  # run a specific workflow
+```
+
+Secrets can be supplied with `--secret-file .secrets` (file format: `KEY=VALUE` per line — keep it gitignored).
+
+### Docker Hub repository
+
+Images are published to Docker Hub under the user configured in `DOCKERHUB_USERNAME`:
+
+- `<user>/product-service:latest` / `:<sha>` — from `image.yml`
+- `<user>/user-service:<sha>` — from `build-all.yml`
+- `<user>/product-service:<sha>` — from `build-all.yml`
+- `<user>/order-service:<sha>` — from `build-all.yml`
+
+### Terraform usage (CI-driven)
+
+The Terraform configuration in [`infra/week9-sqs/`](infra/week9-sqs/) creates an SQS main queue + DLQ for the product-events flow. CI behaviour:
+
+- **On PR touching `infra/week9-sqs/**`:** `fmt -check`, `init`, `validate`, `plan` runs and the plan is commented back on the PR.
+- **On push to `main` touching the same paths:** the same steps plus `terraform apply -auto-approve` against the saved plan.
+
+> ⚠️ The current configuration uses **local state**. For team use, configure an S3 backend with DynamoDB locking before merging real changes to `main`.
+
 ## Troubleshooting
 
-### Kafka Connection Issues
+### "Node 1 disconnected" / "Connection to node 1 (localhost:9092) could not be established"
+This means **Kafka is not running** or not reachable. The application (order-service, product-service) expects a Kafka broker at `localhost:9092`.
+
+**Solution:**
+1. Start Kafka and Zookeeper with Docker:
+   ```bash
+   docker-compose -f docker-compose.kafka.yml up -d
+   ```
+2. Wait 10–20 seconds for Kafka to be ready, then start the microservices.
+3. If you still see the error, check that Kafka is running and that port 9092 is free:
+   ```bash
+   docker ps | grep kafka
+   # Kafka should be listening on 0.0.0.0:9092
+   ```
+
+### Bootstrap servers: use `localhost:9092`, not `kafka:9092`
+If you set `spring.kafka.bootstrap-servers` to **kafka:9092**, the app can only connect when it runs **inside Docker** (same network as the Kafka container). The hostname `kafka` does not exist on your machine.
+
+- **Running with Maven** (`mvn spring-boot:run`): use **localhost:9092** in `application.yml` (product-service, order-service). Start Kafka with `docker-compose -f docker-compose.kafka.yml up -d`.
+- **Running everything in Docker** (e.g. your Week 2 docker-compose): then use **kafka:9092** (or set `SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092` in the container environment).
+
+The project defaults are `localhost:9092` so that local development with Maven works.
+
+### Other Kafka connection issues
 If services cannot connect to Kafka:
 ```bash
 # Check if Kafka is running
 docker ps | grep kafka
 
 # Check Kafka logs
-docker-compose logs kafka
+docker-compose -f docker-compose.kafka.yml logs kafka
 
-# Verify Kafka is accessible
+# Verify Kafka is accessible (optional)
 telnet localhost 9092
 ```
 
