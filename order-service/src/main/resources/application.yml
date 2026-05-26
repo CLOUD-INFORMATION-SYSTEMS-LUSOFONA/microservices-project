@@ -9,7 +9,7 @@ spring:
     url: jdbc:h2:mem:orderdb
     driver-class-name: org.h2.Driver
     username: sa
-    password: 
+    password:
   
   h2:
     console:
@@ -26,7 +26,7 @@ spring:
         format_sql: true
   
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
@@ -81,7 +81,17 @@ springdoc:
 # Service URLs (for Feign clients)
 services:
   user:
-    url: http://localhost:8081
+    url: ${SERVICES_USER_URL:http://localhost:8081}
   product:
-    url: http://localhost:8082
+    url: ${SERVICES_PRODUCT_URL:http://localhost:8082}
 
+# Optional AWS SQS consumer for product-created events
+cloud:
+  sqs:
+    product-events-consumer:
+      enabled: ${CLOUD_SQS_PRODUCT_EVENTS_CONSUMER_ENABLED:false}
+      queue-url: ${CLOUD_SQS_PRODUCT_EVENTS_CONSUMER_QUEUE_URL:}
+      region: ${CLOUD_SQS_PRODUCT_EVENTS_CONSUMER_REGION:}
+      poll-interval-ms: 5000
+      max-number-of-messages: 10
+      wait-time-seconds: 20

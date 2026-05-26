@@ -1,0 +1,83 @@
+---
+- name: Configure EC2 Instances
+  hosts: web_servers
+  become: yes
+  gather_facts: yes
+
+  vars:
+    app_user: appuser
+    app_directory: /opt/app
+    repo_url: https://github.com/CLOUD-INFORMATION-SYSTEMS-LUSOFONA/microservices-project-a22304759.git
+
+  tasks:
+    - name: Create application user
+      user:
+        name: "{{ app_user }}"
+        system: yes
+        shell: /bin/bash
+
+    - name: Install required packages
+      dnf:
+        name:
+          - git
+          - java-21-amazon-corretto-devel
+          - maven
+        state: present
+
+    - name: Create application directory
+      file:
+        path: "{{ app_directory }}"
+        state: directory
+        owner: "{{ app_user }}"
+        group: "{{ app_user }}"
+        mode: "0755"
+
+    - name: Mark repository directory as safe for Git
+      command: git config --global --add safe.directory /opt/app/microservices-project
+      become_user: root
+      changed_when: false
+
+    - name: Clone application repository
+      git:
+        repo: "{{ repo_url }}"
+        dest: "{{ app_directory }}/microservices-project"
+        version: main
+        force: yes
+
+    - name: Set ownership of application files
+      file:
+        path: "{{ app_directory }}/microservices-project"
+        owner: "{{ app_user }}"
+        group: "{{ app_user }}"
+        recurse: yes
+
+    - name: Build product-service
+      command: mvn clean package -DskipTests
+      args:
+        chdir: "{{ app_directory }}/microservices-project/product-service"
+      become_user: "{{ app_user }}"
+      environment:
+        JAVA_HOME: /usr/lib/jvm/java-21-amazon-corretto.x86_64
+
+    - name: Create systemd service
+      template:
+        src: product-service.service.j2
+        dest: /etc/systemd/system/product-service.service
+      notify: restart product-service
+
+    - name: Reload systemd
+      systemd:
+        daemon_reload: yes
+
+    - name: Enable and start service
+      systemd:
+        name: product-service
+        enabled: yes
+        state: started
+
+  handlers:
+    - name: restart product-service
+      systemd:
+        name: product-service
+        state: restarted
+        daemon_reload: yes

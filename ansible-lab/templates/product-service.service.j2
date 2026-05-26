@@ -1,0 +1,15 @@
+[Unit]
+Description=Product Service
+After=network.target
+
+[Service]
+User={{ app_user }}
+WorkingDirectory={{ app_directory }}/microservices-project/product-service
+ExecStart=/usr/bin/java -jar {{ app_directory }}/microservices-project/product-service/target/product-service-1.0.0.jar
+Restart=always
+RestartSec=10
+Environment=SPRING_PROFILES_ACTIVE=production
+Environment=SERVER_PORT=8082
+
+[Install]
+WantedBy=multi-user.target
