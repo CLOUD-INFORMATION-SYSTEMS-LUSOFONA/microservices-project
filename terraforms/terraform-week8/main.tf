@@ -21,13 +21,18 @@ data "aws_availability_zones" "available" {
   state = "available"
 }
 
-data "aws_ami" "amazon_linux" {
+data "aws_ami" "al2023" {
   most_recent = true
   owners      = ["amazon"]
 
   filter {
     name   = "name"
-    values = ["amzn2-ami-hvm-*-x86_64-gp2"]
+    values = ["al2023-ami-*x86_64*"]
+  }
+
+  filter {
+    name   = "state"
+    values = ["available"]
   }
 }
 
@@ -59,7 +64,7 @@ module "compute" {
   source              = "./modules/ec2"
   vpc_id              = module.network.vpc_id
   subnet_id           = module.network.public_subnet_ids[0]
-  ami_id              = data.aws_ami.amazon_linux.id
+  ami_id              = data.aws_ami.al2023.id
   instance_type       = var.instance_type
   key_name            = var.key_name
   allowed_ports       = var.allowed_ports

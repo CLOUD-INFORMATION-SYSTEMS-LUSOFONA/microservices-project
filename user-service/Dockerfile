@@ -1,30 +1,25 @@
-# Multi-stage Dockerfile for user-service (Java 17 / Maven build)
+# =========================
+# BUILD STAGE
+# =========================
+FROM maven:3.9.6-eclipse-temurin-21 AS build
 
-# Builder stage: compile the application using Maven
-FROM maven:3.8.8-openjdk-17 AS builder
-WORKDIR /build
-
-# Copy maven configuration and source
-COPY pom.xml .
-COPY src ./src
-
-# Download dependencies and build the application (skip tests to speed up CI/local builds)
-RUN mvn -B -DskipTests dependency:go-offline
-RUN mvn -B -DskipTests package
-
-# Runtime stage: minimal JRE image
-FROM openjdk:17-jdk-slim
 WORKDIR /app
 
-# Optional: environment variable for additional JVM options
-ENV JAVA_OPTS=""
+COPY pom.xml .
+RUN mvn dependency:go-offline
 
-# Expose the application's default port
-EXPOSE 8080
+COPY src ./src
+RUN mvn clean package -DskipTests
 
-# Copy the built jar from the builder stage. Assumes the build produced a single runnable jar in target/
-COPY --from=builder /build/target/*.jar /app/app.jar
+# =========================
+# RUNTIME STAGE
+# =========================
+FROM eclipse-temurin:21-jdk
 
-# Run the application
-ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar /app/app.jar"]
+WORKDIR /app
 
+COPY --from=build /app/target/*.jar app.jar
+
+EXPOSE 8081
+
+ENTRYPOINT ["java", "-jar", "app.jar"]

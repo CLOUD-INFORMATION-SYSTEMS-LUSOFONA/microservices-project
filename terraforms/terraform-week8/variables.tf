@@ -116,8 +116,8 @@ variable "ec2_user_data" {
   type        = string
   default     = <<-EOF
 #!/bin/bash
-yum update -y
-yum install -y docker
+dnf update -y
+dnf install -y docker
 systemctl start docker
 systemctl enable docker
 usermod -aG docker ec2-user

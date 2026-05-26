@@ -221,7 +221,7 @@ mvn spring-boot:run
 
 **Important:** Before starting the services, **Kafka must be running**. Otherwise you will see errors like *"Node 1 disconnected"* or *"Connection to node 1 (localhost:9092) could not be established"*. To start only Kafka and Zookeeper (recommended for local development):
 ```bash
-docker-compose -f docker-compose.kafka.yml up -d
+docker-compose -f docker-compose.yml up -d
 # Wait a few seconds for Kafka to be ready, then start the services
 ```
 
@@ -590,7 +590,7 @@ This means **Kafka is not running** or not reachable. The application (order-ser
 **Solution:**
 1. Start Kafka and Zookeeper with Docker:
    ```bash
-   docker-compose -f docker-compose.kafka.yml up -d
+   docker-compose -f docker-compose.yml up -d
    ```
 2. Wait 10–20 seconds for Kafka to be ready, then start the microservices.
 3. If you still see the error, check that Kafka is running and that port 9092 is free:
@@ -614,7 +614,7 @@ If services cannot connect to Kafka:
 docker ps | grep kafka
 
 # Check Kafka logs
-docker-compose -f docker-compose.kafka.yml logs kafka
+docker-compose -f docker-compose.yml logs kafka
 
 # Verify Kafka is accessible (optional)
 telnet localhost 9092

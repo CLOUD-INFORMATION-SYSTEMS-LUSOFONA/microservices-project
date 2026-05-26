@@ -1,17 +1,19 @@
 ---
 - name: Install Docker
-  shell: |
-    if command -v dnf >/dev/null 2>&1; then
-      dnf install -y docker
-    else
-      yum install -y docker
-    fi
+  dnf:
+    name: docker
+    state: present
 
-- name: Start Docker service
+- name: Start and enable Docker service
   systemd:
     name: docker
     state: started
     enabled: yes
+
+- name: Create docker group
+  group:
+    name: docker
+    state: present
 
 - name: Add users to docker group
   user:
@@ -19,3 +21,8 @@
     groups: docker
     append: yes
   loop: "{{ docker_users }}"
+
+- name: Ensure docker socket permissions
+  file:
+    path: /var/run/docker.sock
+    mode: "0660"
