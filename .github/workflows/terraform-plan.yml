@@ -1,10 +1,7 @@
-name: Terraform
+name: Terraform Plan
 
 on:
   pull_request:
-    paths: [ 'infra/terraform/**' ]
-  push:
-    branches: [ main ]
     paths: [ 'infra/terraform/**' ]
 
 permissions:
