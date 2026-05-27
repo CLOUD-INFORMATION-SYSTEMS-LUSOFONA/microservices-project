@@ -2,10 +2,10 @@ name: Terraform
 
 on:
   pull_request:
-    paths: [ 'terraform/**' ]
+    paths: [ 'infra/terraform/**' ]
   push:
     branches: [ main ]
-    paths: [ 'terraform/**' ]
+    paths: [ 'infra/terraform/**' ]
 
 permissions:
   id-token: write
@@ -18,7 +18,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: terraform
+        working-directory: infra/terraform
 
     steps:
       - name: Checkout repo
@@ -51,7 +51,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: tfplan
-          path: terraform/tfplan
+          path: infra/terraform/tfplan
 
       - name: Comment plan on PR
         if: github.event_name == 'pull_request'
@@ -60,7 +60,7 @@ jobs:
           script: |
             const { execSync } = require('child_process');
 
-            const out = execSync('terraform show -no-color tfplan')
+            const out = execSync('terraform show -no-color tfplan', { cwd: 'infra/terraform' })
               .toString();
 
             const body =
@@ -80,7 +80,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: tfplan
-          path: terraform
+          path: infra/terraform
 
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
