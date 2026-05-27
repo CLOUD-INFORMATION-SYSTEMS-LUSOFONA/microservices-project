@@ -2,6 +2,10 @@ name: Terraform Apply
 
 on:
   workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'infra/terraform/**'
 
 permissions:
   id-token: write
