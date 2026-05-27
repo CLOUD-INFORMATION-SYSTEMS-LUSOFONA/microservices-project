@@ -54,4 +54,9 @@ class ProductTest {
         assertNull(p.getId());
         assertNull(p.getName());
     }
+
+    @Test
+    void thisShouldFail() {
+        assertEquals(1, 2);
+    }
 }
