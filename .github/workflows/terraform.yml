@@ -3,9 +3,6 @@ name: Terraform
 on:
   pull_request:
     paths: [ 'infra/terraform/**' ]
-  push:
-    branches: [ main ]
-    paths: [ 'infra/terraform/**' ]
 
 permissions:
   id-token: write
