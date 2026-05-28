@@ -1,0 +1,70 @@
+---
+- name: Configure EC2 Production Host
+  hosts: web_servers
+  become: yes
+  gather_facts: yes
+
+  vars:
+    app_user: appuser
+    app_group: deploy
+    app_directory: /opt/app
+
+  tasks:
+
+    - name: Update system
+      dnf:
+        name: "*"
+        state: latest
+
+    - name: Install dependencies
+      dnf:
+        name:
+          - docker
+          - git
+          - curl
+          - aws-cli
+        state: present
+
+    - name: Create group
+      group:
+        name: "{{ app_group }}"
+        state: present
+
+    - name: Create user
+      user:
+        name: "{{ app_user }}"
+        group: "{{ app_group }}"
+        groups: docker
+        append: yes
+        create_home: yes
+
+    - name: Enable Docker
+      systemd:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Install compose plugin
+      dnf:
+        name: docker-compose-plugin
+        state: present
+
+    - name: Create application directories
+      file:
+        path: "{{ item }}"
+        state: directory
+        owner: "{{ app_user }}"
+        group: "{{ app_group }}"
+        mode: '0755'
+      loop:
+        - "{{ app_directory }}"
+        - /home/{{ app_user }}/.aws
+
+    - name: Verify Docker installation
+      command: docker info
+      changed_when: false
+
+    - name: Verify Docker Compose plugin
+      command: docker compose version
+      changed_when: false
+

@@ -1,3 +1,27 @@
+resource "aws_iam_role" "ec2_role" {
+  name = "cloud-project-ec2-role-${var.tags["Environment"]}"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+      }
+    ]
+  })
+
+  tags = var.tags
+}
+
+resource "aws_iam_instance_profile" "ec2_profile" {
+  name = "cloud-project-ec2-profile-${var.tags["Environment"]}"
+  role = aws_iam_role.ec2_role.name
+}
+
 resource "aws_security_group" "this" {
   name        = lower("cloud-project-web-sg")
   description = "Security group for the Week 8 EC2 instance"
@@ -35,6 +59,7 @@ resource "aws_instance" "this" {
   associate_public_ip_address = var.associate_public_ip
   user_data                   = var.user_data
   user_data_replace_on_change = true
+  iam_instance_profile        = aws_iam_instance_profile.ec2_profile.name
 
   tags = merge(var.tags, {
     Name = "cloud-project-instance"

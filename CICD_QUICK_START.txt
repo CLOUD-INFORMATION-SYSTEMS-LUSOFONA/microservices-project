@@ -1,0 +1,95 @@
+⚡ QUICK START - AUTO CI/CD DEPLOYMENT
+═════════════════════════════════════════════════════════════════
+
+🎯 30 SEGUNDOS PARA ENTENDER
+
+Antes: Tinha que fazer terraform apply + ansible manualmente (30 min)
+Depois: 1 clique no GitHub Actions (10 min, totalmente automático)
+
+═════════════════════════════════════════════════════════════════
+
+📋 1. SETUP (5 min, fazer UMA VEZ)
+
+1. Ir para: https://github.com/seu-repo/settings/secrets/actions
+2. Adicionar 4 secrets:
+   ├─ AWS_ROLE_TO_ASSUME = arn:aws:iam::839006976195:role/github-actions-role
+   ├─ TF_KEY_NAME = miguelrodr1
+   ├─ DB_PASSWORD = dr1gues103
+   └─ SSH_PRIVATE_KEY = (conteúdo de ~/.ssh/miguelrodr1_lf.pem)
+
+═════════════════════════════════════════════════════════════════
+
+🚀 2. DEPLOY (10 min, fazer quando quiser)
+
+1. Ir para: GitHub → seu repo → Actions tab
+2. Selecionar: "Terraform Apply + Ansible Deploy"
+3. Clicar: "Run workflow"
+4. Aguardar email de conclusão ✅
+
+═════════════════════════════════════════════════════════════════
+
+📊 3. WHAT HAPPENS AUTOMATICALLY
+
+Infrastructure:
+  ✅ Terraform cria: EC2 + RDS + SQS
+
+Variáveis:
+  ✅ rds_endpoint: Capturado do Terraform output
+  ✅ sqs_queue_url: Capturado do Terraform output
+  ✅ db_password: Do GitHub Secret
+  ✅ ec2_ip: Dinâmico (do Terraform)
+
+Deployment:
+  ✅ Ansible configura EC2 (Docker, users)
+  ✅ Ansible deploy services (com variáveis automáticas)
+  ✅ Health check: http://<ec2-ip>:8080/actuator/health
+
+═════════════════════════════════════════════════════════════════
+
+✨ RESULTADO FINAL
+
+GitHub Actions log show "✅ Deployment complete!"
+
+Services rodando em:
+├─ API Gateway: http://<ec2-ip>:8080
+├─ User Service: http://<ec2-ip>:8081
+├─ Product Service: http://<ec2-ip>:8082
+└─ Order Service: http://<ec2-ip>:8083
+
+Database: RDS (endpoint capturado)
+Queues: SQS (3 filas criadas)
+
+═════════════════════════════════════════════════════════════════
+
+💡 VARIÁVEIS INJECTADAS
+
+Ansible recebe automaticamente:
+  - rds_endpoint (do terraform output)
+  - db_password (do github secret)
+  - sqs_queue_url (do terraform output)
+
+NO MANUAL VARIABLES NEEDED! ✅
+
+═════════════════════════════════════════════════════════════════
+
+❌ NÃO FAZER MAIS
+
+❌ terraform apply manualmente
+❌ Capturar outputs manualmente
+❌ ansible-playbook manualmente
+❌ Passar variáveis manualmente
+
+✅ FAZER AGORA
+
+✅ 1 clique no GitHub Actions
+✅ Tudo automático
+✅ Café enquanto roda ☕
+
+═════════════════════════════════════════════════════════════════
+
+Para mais detalhes:
+→ docs/CICD_AUTO_DEPLOYMENT_GUIDE.md (guia completo)
+→ .github/workflows/terraform-apply.yml (código do workflow)
+
+═════════════════════════════════════════════════════════════════
+

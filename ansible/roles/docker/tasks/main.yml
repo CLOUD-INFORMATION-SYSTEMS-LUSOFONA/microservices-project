@@ -1,0 +1,17 @@
+- name: Install Docker
+  dnf:
+    name: docker
+    state: present
+
+- name: Enable and start Docker service
+  systemd:
+    name: docker
+    state: started
+    enabled: yes
+
+- name: Add users to docker group
+  user:
+    name: "{{ item }}"
+    groups: docker\
+    append: yes
+  loop: "{{ docker_users }}"
