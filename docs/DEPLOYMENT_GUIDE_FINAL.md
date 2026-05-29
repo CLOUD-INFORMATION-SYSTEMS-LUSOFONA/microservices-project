@@ -141,7 +141,7 @@ ansible_python_interpreter=/usr/bin/python3
 
 **Playbook 1: Configure EC2 (Install Docker, etc.)**
 ```powershell
-ansible-playbook -i ansible/inventory.ini ansible/configure-ec2.yml -vvv
+ansible-playbook -i ansible/inventory.ini ansible/playbooks/configure-ec2.yml -vvv
 ```
 
 Expected output:
@@ -154,7 +154,7 @@ Expected output:
 
 **Playbook 2: Deploy Services**
 ```powershell
-ansible-playbook -i ansible/inventory.ini ansible/deploy-app.yml \
+ansible-playbook -i ansible/inventory.ini ansible/playbooks/deploy-app.yml \
   --extra-vars "rds_endpoint=<RDS_ENDPOINT> db_password=<DB_PASSWORD> sqs_queue_url=<SQS_QUEUE>" \
   -vvv
 ```

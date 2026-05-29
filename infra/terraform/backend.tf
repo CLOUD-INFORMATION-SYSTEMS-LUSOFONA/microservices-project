@@ -1,14 +1,15 @@
 terraform {
-  # Uncomment and update bucket/key values once you've created the S3 bucket and DynamoDB table
-  # Reference: scripts/bootstrap-terraform-backend.ps1
-  #
-  # backend "s3" {
-  #   bucket         = "my-terraform-state-bucket"
-  #   key            = "project/terraform.tfstate"
-  #   region         = "eu-central-1"
-  #   dynamodb_table = "terraform-locks"
-  #   encrypt        = true
-  # }
+  # Remote state backend configured with S3
+  backend "s3" {
+    bucket         = "terraform-state-cloud-project-753"
+    key            = "cloud-project/terraform.tfstate"
+    region         = "eu-central-1"
+    encrypt        = true
+    # dynamodb_table = "terraform-locks"  # Optional: Create DynamoDB table if IAM permits
+  }
 
-  # For local development, uses local state file:
+  # For local development without remote state, use local backend:
+  # backend "local" {
+  #   path = "terraform.tfstate"
+  # }
 }

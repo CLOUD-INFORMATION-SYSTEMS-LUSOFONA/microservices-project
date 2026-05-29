@@ -48,7 +48,7 @@ function Create-S3Bucket {
 
     try {
         # Create bucketin appropriate region
-        if ($REGION -eq "us-east-1") {
+        if ($REGION -eq "us-central-1") {
             aws s3 create-bucket `
                 --bucket $BucketName `
                 --region $REGION `

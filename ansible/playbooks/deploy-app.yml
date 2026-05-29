@@ -1,66 +1,28 @@
 ---
-- name: Deploy Application
+- name: Deploy stack
   hosts: web_servers
   become: yes
-  vars:
-    app_directory: /opt/app
-    app_user: appuser
-    rds_endpoint: "{{ rds_endpoint | default(lookup('env','RDS_ENDPOINT')) }}"
-    db_password: "{{ db_password | default(lookup('env','DB_PASSWORD')) }}"
 
   tasks:
 
-    - name: Ensure application directory exists
+    - name: Create app directory
       file:
-        path: "{{ app_directory }}"
+        path: /opt/app
         state: directory
-        owner: "{{ app_user }}"
-        group: "{{ app_user }}"
         mode: '0755'
 
-    - name: Copy docker-compose (production) to remote
+    - name: Copy docker-compose
       copy:
-        src: "{{ playbook_dir }}/../docker-compose.yml"
-        dest: "{{ app_directory }}/docker-compose.yml"
-        owner: "{{ app_user }}"
-        group: "{{ app_user }}"
+        src: ../files/docker-compose.yml
+        dest: /opt/app/docker-compose.yml
         mode: '0644'
 
-    - name: Create .env file with runtime variables
-      copy:
-        dest: "{{ app_directory }}/.env"
-        content: |
-          RDS_ENDPOINT={{ rds_endpoint }}
-          DB_PASSWORD={{ db_password }}
-        owner: "{{ app_user }}"
-        group: "{{ app_user }}"
-        mode: '0600'
-
-    - name: Pull latest images (compose will also pull, but pre-pulling reduces downtime)
-      command: docker compose -f "{{ app_directory }}/docker-compose.yml" pull
+    - name: Pull images
+      command: docker compose pull
       args:
-        chdir: "{{ app_directory }}"
+        chdir: /opt/app
 
-    - name: Deploy stack with docker compose (zero-downtime friendly)
-      command: docker compose -f "{{ app_directory }}/docker-compose.yml" up -d --pull always
+    - name: Start stack
+      command: docker compose up -d
       args:
-        chdir: "{{ app_directory }}"
-
-    - name: Wait for services to be healthy
-      pause:
-        seconds: 10
-
-    - name: Check API Gateway health endpoint
-      uri:
-        url: http://localhost:8080/actuator/health
-        method: GET
-        status_code: 200
-      register: api_health
-      retries: 6
-      delay: 5
-      until: api_health.status == 200
-      ignore_errors: yes
-
-    - name: Display deployment summary
-      debug:
-        msg: "Deployment complete (api health status: {{ api_health.status | default('unknown') }})."
+        chdir: /opt/app

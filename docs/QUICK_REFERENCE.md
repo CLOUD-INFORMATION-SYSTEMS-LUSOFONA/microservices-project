@@ -32,10 +32,10 @@ terraform state show <resource>
 
 ```bash
 # Ansible host setup
-ansible-playbook -i ansible/inventory.ini ansible/configure-ec2.yml -vvv
+ansible-playbook -i ansible/inventory.ini ansible/playbooks/configure-ec2.yml -vvv
 
 # Deploy services
-ansible-playbook -i ansible/inventory.ini ansible/deploy-app.yml \
+ansible-playbook -i ansible/inventory.ini ansible/playbooks/deploy-app.yml \
   --extra-vars "rds_endpoint=<RDS> db_password=<PWD> sqs_queue_url=<URL>" \
   -vvv
 

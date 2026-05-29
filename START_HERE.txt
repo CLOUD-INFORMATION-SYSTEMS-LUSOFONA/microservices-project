@@ -123,8 +123,8 @@ terraform output -raw database_endpoint
 terraform output -raw messaging_product_events_queue_url
 
 # Deploy services with Ansible (15-20 min)
-ansible-playbook -i ansible/inventory.ini ansible/configure-ec2.yml
-ansible-playbook -i ansible/inventory.ini ansible/deploy-app.yml \
+ansible-playbook -i ansible/inventory.ini ansible/playbooks/configure-ec2.yml
+ansible-playbook -i ansible/inventory.ini ansible/playbooks/deploy-app.yml \
   --extra-vars "rds_endpoint=XXX db_password=YYY sqs_queue_url=ZZZ"
 
 # Test services

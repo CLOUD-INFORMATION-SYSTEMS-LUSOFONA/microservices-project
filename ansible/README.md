@@ -9,9 +9,13 @@ Terraform (infra/terraform/)
     ↓ Creates
 EC2 Instance (Amazon Linux 2023)
     ↓ Configured by
-Ansible (infra/ansible/)
-    ├─ configure-ec2.yml (setup Docker, users, directories)
-    └─ deploy-app.yml (docker-compose, health checks)
+Ansible (ansible/)
+    ├─ playbooks/
+    │  ├─ configure-ec2.yml (setup Docker, users, directories)
+    │  └─ deploy-app.yml (docker-compose, health checks)
+    ├─ inventory.ini (EC2 host configuration)
+    ├─ docker-compose.yml (services definition)
+    └─ main.yml (master orchestration)
         ↓ Runs
 Docker Compose on EC2
     ├─ api-gateway (8080)
@@ -25,8 +29,8 @@ Docker Compose on EC2
 
 | File | Purpose |
 |------|---------|
-| `configure-ec2.yml` | Install Docker, create users, setup directories |
-| `deploy-app.yml` | Copy docker-compose.yml, start services, health checks |
+| `playbooks/configure-ec2.yml` | Install Docker, create users, setup directories |
+| `playbooks/deploy-app.yml` | Copy docker-compose.yml, start services, health checks |
 | `docker-compose.yml` | Define 4 services + PostgreSQL + networking |
 | `inventory.ini` | EC2 host configuration |
 | `main.yml` | Master playbook (optional orchestration) |

@@ -1,7 +1,7 @@
 ---
 docker_users:
   - ec2-user
-  - appuser
+  - app-user
 
 docker_compose_version: "2.28.1"
 docker_network_name: "microservices"

@@ -25,6 +25,5 @@ output "security_group_id" {
 
 output "iam_role_name" {
   description = "EC2 IAM role name"
-  value       = aws_iam_role.ec2_role.name
+  value       = data.aws_iam_role.ec2_role.name
 }
-
