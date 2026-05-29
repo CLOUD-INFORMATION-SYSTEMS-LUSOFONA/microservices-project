@@ -55,98 +55,55 @@ This is a microservices-based application demonstrating a modern cloud-native ar
 
 ```
 microservices-project/
-├── api-gateway/          # API Gateway using Spring Cloud Gateway
-│   ├── src/
-│   │   ├── main/
-│   │   │   ├── java/
-│   │   │   │   └── pt/ulusofona/apigateway/
-│   │   │   │       ├── ApiGatewayApplication.java
-│   │   │   │       └── config/
-│   │   │   │           └── GatewayConfig.java
-│   │   │   └── resources/
-│   │   │       └── application.yml
-│   │   └── test/
-│   └── pom.xml
-├── user-service/         # User management microservice
-│   ├── src/
-│   │   ├── main/
-│   │   │   ├── java/
-│   │   │   │   └── pt/ulusofona/userservice/
-│   │   │   │       ├── UserServiceApplication.java
-│   │   │   │       ├── controller/
-│   │   │   │       │   ├── UserController.java
-│   │   │   │       │   └── GlobalExceptionHandler.java
-│   │   │   │       ├── service/
-│   │   │   │       │   └── UserService.java
-│   │   │   │       ├── repository/
-│   │   │   │       │   └── UserRepository.java
-│   │   │   │       ├── model/
-│   │   │   │       │   └── User.java
-│   │   │   │       └── dto/
-│   │   │   │           ├── UserRequest.java
-│   │   │   │           └── UserResponse.java
-│   │   │   └── resources/
-│   │   │       └── application.yml
-│   │   └── test/
-│   └── pom.xml
-├── product-service/      # Product management microservice
-│   ├── src/
-│   │   ├── main/
-│   │   │   ├── java/
-│   │   │   │   └── pt/ulusofona/productservice/
-│   │   │   │       ├── ProductServiceApplication.java
-│   │   │   │       ├── controller/
-│   │   │   │       │   ├── ProductController.java
-│   │   │   │       │   └── GlobalExceptionHandler.java
-│   │   │   │       ├── service/
-│   │   │   │       │   └── ProductService.java
-│   │   │   │       ├── repository/
-│   │   │   │       │   └── ProductRepository.java
-│   │   │   │       ├── model/
-│   │   │   │       │   └── Product.java
-│   │   │   │       └── dto/
-│   │   │   │           ├── ProductRequest.java
-│   │   │   │           └── ProductResponse.java
-│   │   │   └── resources/
-│   │   │       └── application.yml
-│   │   └── test/
-│   └── pom.xml
-├── order-service/        # Order management microservice (Kafka + OpenFeign)
-│   ├── src/
-│   │   ├── main/
-│   │   │   ├── java/
-│   │   │   │   └── pt/ulusofona/orderservice/
-│   │   │   │       ├── OrderServiceApplication.java
-│   │   │   │       ├── controller/
-│   │   │   │       │   ├── OrderController.java
-│   │   │   │       │   └── GlobalExceptionHandler.java
-│   │   │   │       ├── service/
-│   │   │   │       │   └── OrderService.java
-│   │   │   │       ├── repository/
-│   │   │   │       │   └── OrderRepository.java
-│   │   │   │       ├── model/
-│   │   │   │       │   ├── Order.java
-│   │   │   │       │   ├── OrderItem.java
-│   │   │   │       │   └── OrderStatus.java
-│   │   │   │       ├── dto/
-│   │   │   │       │   ├── OrderRequest.java
-│   │   │   │       │   ├── OrderResponse.java
-│   │   │   │       │   └── OrderItemRequest.java
-│   │   │   │       ├── client/
-│   │   │   │       │   ├── UserServiceClient.java (OpenFeign)
-│   │   │   │       │   └── ProductServiceClient.java (OpenFeign)
-│   │   │   │       ├── event/
-│   │   │   │       │   ├── OrderCreatedEvent.java
-│   │   │   │       │   └── OrderStatusChangedEvent.java
-│   │   │   │       └── config/
-│   │   │   │           └── KafkaConfig.java
-│   │   │   └── resources/
-│   │   │       └── application.yml
-│   │   └── test/
-│   └── pom.xml
-├── Aulas/                # Course materials and documentation
-├── README.md             # This file
-└── API_EXAMPLES.md       # API usage examples
+├── .github/
+│   └── workflows/              # GitHub Actions CI/CD Pipelines
+│       ├── terraform-plan.yml  # Validate & plan Terraform on PRs
+│       ├── terraform-apply.yml # Apply Terraform infrastructure
+│       └── image.yml           # Build & push Docker images
+│
+├── docs/
+│   ├── architecture.md         # System design & VPC/EC2/RDS diagrams
+│   ├── deployment.md           # Step-by-step deployment guide
+│   └── security.md             # Security model & IAM best practices
+│
+├── infra/
+│   ├── terraform/              # Infrastructure as Code (Terraform)
+│   │   ├── main.tf             # Provider & module composition
+│   │   ├── variables.tf        # Input variables with validation
+│   │   ├── outputs.tf          # Network, compute, database outputs
+│   │   ├── backend.tf          # Remote state (S3 + DynamoDB)
+│   │   ├── terraform.tfvars.example
+│   │   └── modules/
+│   │       ├── vpc/            # VPC, subnets, IGW, route tables
+│   │       ├── ec2/            # EC2 instance & security groups
+│   │       └── rds/            # RDS PostgreSQL & security groups
+│   │
+│   ├── ansible/                # Configuration Management
+│   │   ├── configure-ec2.yml   # Install Docker, Java, build apps
+│   │   └── inventory.ini       # EC2 inventory
+│
+├── services/                   # Microservices (Dockerized)
+│   ├── api-gateway/            # API Gateway (Port 8080)
+│   │   ├── src/
+│   │   ├── Dockerfile          # Multi-stage build
+│   │   └── pom.xml
+│   ├── product-service/        # Product Service (Port 8082)
+│   │   ├── src/
+│   │   ├── Dockerfile
+│   │   └── pom.xml
+│   ├── user-service/           # User Service (Port 8081)
+│   │   ├── src/
+│   │   ├── Dockerfile
+│   │   └── pom.xml
+│   └── order-service/          # Order Service (Port 8083)
+│       ├── src/
+│       ├── Dockerfile
+│       └── pom.xml
+│
+├── docker-compose.yml          # Local dev orchestration
+├── Aulas/                       # Course materials
+├── README.md                    # This file
+└── API_EXAMPLES.md              # API usage examples
 ```
 
 ## Technologies Used
@@ -167,7 +124,85 @@ microservices-project/
 - **Jakarta Validation** - Bean validation framework
 - **SpringDoc OpenAPI 2.6.0** - API documentation (Swagger UI)
 - **Micrometer & Prometheus** - Metrics collection and observability
-## Prerequisites
+
+## Infrastructure & Cloud Deployment (Weeks 8-12)
+
+### Infrastructure as Code (Terraform)
+
+The project includes complete Terraform configuration for deploying microservices to AWS:
+
+- **VPC Module** (`modules/vpc/`): VPC, public/private subnets across 2 AZs, Internet Gateway, route tables
+- **EC2 Module** (`modules/ec2/`): Amazon Linux 2023 instance, security groups with dynamic ports, user data
+- **RDS Module** (`modules/rds/`): PostgreSQL database in private subnets, encrypted storage, automated backups
+
+**Key Features:**
+- ✅ Input variable validation (CIDR blocks, ports, instance types)
+- ✅ Workspace support (dev/staging/prod)
+- ✅ Comprehensive tagging strategy
+- ✅ S3 remote state backend (optional, shown in `backend.tf`)
+- ✅ Outputs for API Gateway routing & application configuration
+
+**Quick Start:**
+```bash
+cd infra/terraform
+terraform init -input=false
+terraform fmt -recursive
+terraform validate
+terraform plan
+terraform apply
+```
+
+See [**docs/deployment.md**](docs/deployment.md) for detailed setup.
+
+### Configuration Management (Ansible)
+
+Ansible playbooks automate EC2 setup & application deployment:
+
+- **configure-ec2.yml**: System updates, Docker installation, Java setup, application build
+- **inventory.ini**: EC2 host configuration
+
+**Quick Start:**
+```bash
+cd infra/ansible
+ansible-playbook -i inventory.ini configure-ec2.yml
+```
+
+### CI/CD Pipelines (GitHub Actions)
+
+Three workflows automate the full pipeline:
+
+1. **terraform-plan.yml**: Triggered on PR, runs format check → validate → plan
+2. **terraform-apply.yml**: Manual trigger, applies infrastructure changes
+3. **image.yml**: Automatic push to main, builds & pushes Docker images
+
+See `.github/workflows/` for implementation.
+
+### AWS Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     AWS VPC (10.8.0.0/16)                   │
+│                                                              │
+│  Public Subnets (AZ-a, AZ-b)                               │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │  EC2 Instance (AL2023, t3.micro)                     │  │
+│  │  ├─ Docker: API Gateway (8080)                       │  │
+│  │  ├─ Docker: Product Service (8082)                   │  │
+│  │  ├─ Docker: User Service (8081)                      │  │
+│  │  └─ Docker: Order Service (8083)                     │  │
+│  └──────────────────────────────────────────────────────┘  │
+│  ↓ (Port 5432, App SG)                                      │
+│  Private Subnets (AZ-a, AZ-b)                              │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │  RDS PostgreSQL (db.t3.micro)                        │  │
+│  │  └─ cloudprojectdb (replica-ready, automated backup) │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                                                              │
+│  Internet Gateway → Route 0.0.0.0/0                         │
+└─────────────────────────────────────────────────────────────┘
+```
+
+
 
 Before running this project, ensure you have the following installed:
 
@@ -219,12 +254,10 @@ cd api-gateway
 mvn spring-boot:run
 ```
 
-**Important:** Before starting the services, ensure Kafka is running:
+**Important:** Before starting the services, **Kafka must be running**. Otherwise you will see errors like *"Node 1 disconnected"* or *"Connection to node 1 (localhost:9092) could not be established"*. To start only Kafka and Zookeeper (recommended for local development):
 ```bash
-# Using Docker Compose (recommended)
-docker-compose up -d zookeeper kafka
-
-# Or install Kafka locally and start it
+docker-compose -f docker-compose.yml up -d
+# Wait a few seconds for Kafka to be ready, then start the services
 ```
 
 ### Option 2: Build and Run JAR Files
@@ -398,6 +431,15 @@ Order Service: Creates order → Publishes OrderCreatedEvent to Kafka
 Product Service: Consumes event → Updates product inventory
 ```
 
+### 3. Optional Amazon SQS (Week 10 – cloud lab)
+
+The template also includes **optional AWS SQS** wiring for a shared **`product-events`** queue:
+
+- **product-service** publishes a JSON `ProductCreated` event after a successful **`POST /products`** when `cloud.sqs.product-events.enabled=true`.
+- **order-service** long-polls the same queue URL and logs received events when `cloud.sqs.product-events-consumer.enabled=true`.
+
+Terraform for queues + DLQ lives in **`infra/week9-sqs/`**. The Week 10 course materials focus on **infrastructure** (queues, IAM, environment variables), not on implementing Java producers or consumers.
+
 ## Microservice Architecture
 
 Each microservice follows a layered architecture pattern:
@@ -471,11 +513,11 @@ Each microservice follows a layered architecture pattern:
 - [ ] Add automated testing
 - [ ] Configure deployment environments
 
-### Week 11 - SQS (Event-Driven Architecture)
-- [ ] Integrate SQS for messaging
-- [ ] Implement event-driven architecture
-- [ ] Create message producers and consumers
-- [ ] Handle asynchronous communication
+### Week 11 - SQS (event-driven architecture, cloud focus)
+- [ ] Create SQS main queue and DLQ (Terraform in `infra/week9-sqs/`, or Console / CLI)
+- [ ] Configure redrive policy and sensible visibility timeout / long polling
+- [ ] Grant IAM least privilege (`SendMessage` / `ReceiveMessage` / `DeleteMessage`, etc.)
+- [ ] Enable the template via `CLOUD_SQS_*` environment variables and verify logs end-to-end
 
 ### Week 12 - Ansible
 - [ ] Create Ansible playbooks
@@ -577,16 +619,39 @@ docker-compose down
 
 ## Troubleshooting
 
-### Kafka Connection Issues
+### "Node 1 disconnected" / "Connection to node 1 (localhost:9092) could not be established"
+This means **Kafka is not running** or not reachable. The application (order-service, product-service) expects a Kafka broker at `localhost:9092`.
+
+**Solution:**
+1. Start Kafka and Zookeeper with Docker:
+   ```bash
+   docker-compose -f docker-compose.yml up -d
+   ```
+2. Wait 10–20 seconds for Kafka to be ready, then start the microservices.
+3. If you still see the error, check that Kafka is running and that port 9092 is free:
+   ```bash
+   docker ps | grep kafka
+   # Kafka should be listening on 0.0.0.0:9092
+   ```
+
+### Bootstrap servers: use `localhost:9092`, not `kafka:9092`
+If you set `spring.kafka.bootstrap-servers` to **kafka:9092**, the app can only connect when it runs **inside Docker** (same network as the Kafka container). The hostname `kafka` does not exist on your machine.
+
+- **Running with Maven** (`mvn spring-boot:run`): use **localhost:9092** in `application.yml` (product-service, order-service). Start Kafka with `docker-compose -f docker-compose.kafka.yml up -d`.
+- **Running everything in Docker** (e.g. your Week 2 docker-compose): then use **kafka:9092** (or set `SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092` in the container environment).
+
+The project defaults are `localhost:9092` so that local development with Maven works.
+
+### Other Kafka connection issues
 If services cannot connect to Kafka:
 ```bash
 # Check if Kafka is running
 docker ps | grep kafka
 
 # Check Kafka logs
-docker-compose logs kafka
+docker-compose -f docker-compose.yml logs kafka
 
-# Verify Kafka is accessible
+# Verify Kafka is accessible (optional)
 telnet localhost 9092
 ```
 
@@ -618,10 +683,64 @@ This is an educational template. Students should complete functionalities accord
 
 This project is for educational purposes.
 
+## GitHub Actions Workflows
+
+### terraform-plan.yml
+
+**Trigger:** PR on paths `infra/terraform/**`
+
+**Steps:**
+1. Checkout repository
+2. Configure AWS credentials (OIDC)
+3. Format check (`terraform fmt -check`)
+4. Validate syntax (`terraform validate`)
+5. Plan infrastructure (`terraform plan`)
+6. Comment plan on PR
+
+**Required GitHub Secrets:**
+- `AWS_ROLE_TO_ASSUME` — OIDC role ARN
+
+### terraform-apply.yml
+
+**Trigger:** Manual (`workflow_dispatch`)
+
+**Steps:**
+1. Checkout repository
+2. Configure AWS credentials (OIDC)
+3. Initialize Terraform
+4. Apply infrastructure (`terraform apply -auto-approve`)
+
+**Required GitHub Secrets:**
+- `AWS_ROLE_TO_ASSUME`
+- `TF_KEY_NAME`
+- `DB_PASSWORD`
+
+### image.yml
+
+**Trigger:** Push to `main`
+
+**Steps:**
+1. Build Docker image (product-service)
+2. Push to DockerHub
+
+**Required GitHub Secrets:**
+- `DOCKERHUB_USERNAME`
+- `DOCKERHUB_TOKEN`
+
+## Documentation
+
+- **[docs/architecture.md](docs/architecture.md)** — VPC layout, data flow, service interaction
+- **[docs/deployment.md](docs/deployment.md)** — Step-by-step deployment guide, prerequisites, troubleshooting
+- **[docs/security.md](docs/security.md)** — Security model, IAM, secrets management, production hardening
+- **[infra/terraform/README.md](infra/terraform/README.md)** — Terraform modules overview
+
 ## Additional Resources
 
 - [Spring Boot Documentation](https://spring.io/projects/spring-boot)
 - [Spring Cloud Gateway Documentation](https://spring.io/projects/spring-cloud-gateway)
 - [Spring Data JPA Documentation](https://spring.io/projects/spring-data-jpa)
 - [Microservices Patterns](https://microservices.io/patterns/)
+- [Terraform AWS Provider](https://registry.terraform.io/providers/hashicorp/aws/latest)
+- [Ansible AWS Modules](https://docs.ansible.com/ansible/latest/collections/amazon/aws/index.html)
+- [GitHub Actions OIDC](https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/about-security-hardening-with-openid-connect)
 - [Course Materials](Aulas/README.md)
